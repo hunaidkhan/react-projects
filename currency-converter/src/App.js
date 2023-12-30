@@ -1,51 +1,123 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState} from 'react';
 import './App.css';
-import ToDoList from './ToDoList';
-import Todo from './Todo';
-import uuid from 'react-uuid';
+import Slider from './Slider';
+import SidebarItem from './SidebarItem';
 
-const LOCALSTORAGE_KEY = 'todos'
+
+const DEFAULT_OPTIONS = [
+  {
+    name: 'Brightness',
+    property: 'brightness',
+    value: 100,
+    range: {
+      min: 0,
+      max: 200
+    },
+    unit: '%'
+  },
+  {
+    name: 'Contrast',
+    property: 'contrast',
+    value: 100,
+    range: {
+      min: 0,
+      max: 200
+    },
+    unit: '%'
+  },
+  {
+    name: 'Saturation',
+    property: 'saturate',
+    value: 100,
+    range: {
+      min: 0,
+      max: 200
+    },
+    unit: '%'
+  },
+  {
+    name: 'Grayscale',
+    property: 'grayscale',
+    value: 0,
+    range: {
+      min: 0,
+      max: 100
+    },
+    unit: '%'
+  },
+  {
+    name: 'Sepia',
+    property: 'sepia',
+    value: 0,
+    range: {
+      min: 0,
+      max: 100
+    },
+    unit: '%'
+  },
+  {
+    name: 'Hue Rotate',
+    property: 'hue-rotate',
+    value: 0,
+    range: {
+      min: 0,
+      max: 360
+    },
+    unit: 'deg'
+  },
+  {
+    name: 'Blur',
+    property: 'blur',
+    value: 0,
+    range: {
+      min: 0,
+      max: 20
+    },
+    unit: 'px'
+  }
+]
 
 function App() {
-  const [todos, setTodos] = useState([]);
-  const todoContent = useRef();
+  const [selectedIndex, setSelectedIndex] =useState(0);
+  const [options, setOptions]= useState(DEFAULT_OPTIONS);
+  const selectedOption = options[selectedIndex];
 
-  useEffect(() => {
-    const storedTodos= JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY));
-    if(storedTodos) setTodos(storedTodos)
-  }, [])
-
-  useEffect(() => {
-    localStorage.setItem(LOCALSTORAGE_KEY,JSON.stringify(todos));
-  }, [todos])
-
-
-  function handleAddTodo(e){
-    const content = todoContent.current.value;
-    if(content === '') return;
-    setTodos(prevTodos => {
-      console.log(uuid());
-      return [...prevTodos, {id:uuid(), name: content, completed: false}]
+  function handleSliderChange({target}){
+    setOptions(prevOptions => {
+      return prevOptions.map((option, index) => {
+        if (index !== selectedIndex) return option
+        return {...option, value: target.value}
+      })
     })
-    todoContent.current.value = null;
   }
 
-  function toggleTodo(id){
-    const newTodos= [...todos];
-    const foundTodo = newTodos.find(todo => todo.id === id);
-    foundTodo.completed = !foundTodo.completed;
-    setTodos(newTodos);
+  function getImageStyle(){
+    const allFilters = options.map((option) => {
+      return `${option.property}(${option.value}${option.unit})`
+    })
+    return {filter: allFilters.join(' ')}
   }
-
 
   return (
-    <>
-      <ToDoList todos={todos} toggleTodo = {toggleTodo} />
-      <input ref={todoContent} type='text' />
-      <button onClick={handleAddTodo}>Add Todo</button>
-      <button>Clear Todo</button>
-      <div>{todos.filter(todo =>!todo.complete).length} left to do</div>
-    </>
+    <div className='container'>
+      <div className='image' style={getImageStyle()}/>
+      <div className='sidebar'>
+        {options.map((option, index) => {
+          return <SidebarItem 
+          key={index}
+          name={option.name}
+          active={index === selectedIndex}
+          handleClick={() => setSelectedIndex(index)}
+          ></SidebarItem>
+        })}
+      </div>
+      <Slider 
+        min= {selectedOption.range.min}
+        max= {selectedOption.range.max}
+        value= {selectedOption.value}
+        handleChange = {handleSliderChange}
+      />
+    </div>
   );
 }
 
